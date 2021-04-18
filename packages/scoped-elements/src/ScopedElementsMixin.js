@@ -2,11 +2,18 @@ import { dedupeMixin } from '@open-wc/dedupe-mixin';
 import { adoptStyles } from '@lit/reactive-element/css-tag.js';
 
 /**
+ * @typedef {import('./types').RenderOptions} RenderOptions
  * @typedef {import('./types').ScopedElementsMixin} ScopedElementsMixin
  * @typedef {import('./types').ScopedElementsHost} ScopedElementsHost
  * @typedef {import('./types').ScopedElementsMap} ScopedElementsMap
+ * @typedef {import('@lit/reactive-element').CSSResultFlatArray} CSSResultFlatArray
  */
 
+/**
+ * @template {import('./types').Constructor<HTMLElement>} T
+ * @param {T} superclass
+ * @return {T & import('./types').Constructor<ScopedElementsHost>}
+ */
 const ScopedElementsMixinImplementation = superclass =>
   /** @type {ScopedElementsMixin} */
   class ScopedElementsHost extends superclass {
@@ -17,6 +24,33 @@ const ScopedElementsMixinImplementation = superclass =>
      */
     static get scopedElements() {
       return {};
+    }
+
+    /** @type {ShadowRootInit} */
+    static get shadowRootOptions() {
+      return this.__shadowRootOptions;
+    }
+
+    /** @type {ShadowRootInit} */
+    static set shadowRootOptions(value) {
+      this.__shadowRootOptions = value;
+    }
+
+    /** @type {CSSResultFlatArray} */
+    static get elementStyles() {
+      return this.__elementStyles;
+    }
+
+    static set elementStyles(styles) {
+      this.__elementStyles = styles;
+    }
+
+    // either TS or ESLint will complain here
+    // eslint-disable-next-line no-unused-vars
+    constructor(..._args) {
+      super();
+      /** @type {RenderOptions} */
+      this.renderOptions = this.renderOptions || undefined;
     }
 
     /**
@@ -33,18 +67,27 @@ const ScopedElementsMixinImplementation = superclass =>
     }
 
     createRenderRoot() {
-      const { scopedElements, shadowRootOptions, elementStyles } = /** @type {typeof ScopedElementsHost} */ (this.constructor);
+      const {
+        scopedElements,
+        shadowRootOptions,
+        elementStyles,
+      } = /** @type {typeof ScopedElementsHost} */ (this.constructor);
 
       Object.entries(scopedElements).forEach(([tagName, klass]) =>
         this.registry.define(tagName, klass),
       );
 
-      this.renderOptions.creationScope = this.attachShadow({
+      /** @type {ShadowRootInit} */
+      const options = {
+        mode: 'open',
         ...shadowRootOptions,
         customElements: this.registry,
-      });
+      };
 
-      adoptStyles(this.renderOptions.creationScope, elementStyles);
+      this.renderOptions.creationScope = this.attachShadow(options);
+
+      if (this.renderOptions.creationScope instanceof ShadowRoot)
+        adoptStyles(this.renderOptions.creationScope, elementStyles);
 
       return this.renderOptions.creationScope;
     }
