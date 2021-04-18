@@ -1,5 +1,5 @@
 import { Constructor } from '@open-wc/dedupe-mixin';
-import { LitElement } from 'lit-element';
+import { ReactiveElement } from '@lit/reactive-element';
 
 export type ScopedElementsMap = {
   [key: string]: typeof HTMLElement;
@@ -13,22 +13,17 @@ export declare class ScopedElementsHost {
   static scopedElements: ScopedElementsMap;
 
   /**
-   * Returns a scoped tag name
+   * Obtains the CustomElementRegistry
    */
-  static getScopedTagName(tagName: string): string;
+  static registry: CustomElementRegistry;
 
   /**
-   * Returns a scoped tag name
-   */
-  getScopedTagName(tagName: string): string;
-
-  /**
-   * Defines a scoped element
+   * Defines a scoped element inside the CustomElementRegistry bound to the shadowRoot.
    */
   defineScopedElement<T extends HTMLElement>(tagName: string, klass: Constructor<T>): void;
 }
 
-declare function ScopedElementsMixinImplementation<T extends Constructor<LitElement>>(
+declare function ScopedElementsMixinImplementation<T extends Constructor<ReactiveElement>>(
   superclass: T,
 ): T & Constructor<ScopedElementsHost> & typeof ScopedElementsHost;
 
